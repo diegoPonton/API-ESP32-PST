@@ -1,4 +1,17 @@
-.venv/
+# Python / Django
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
 db.sqlite3
+
+# Virtualenv
+.venv/
+env/
+
+# VSCode
+.vscode/
+
+# Secretos
 .env
