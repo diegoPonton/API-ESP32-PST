@@ -101,9 +101,12 @@ def query_last_location(device_id: str):
     flux = f'''
 from(bucket: "{bucket}")
   |> range(start: -7d)
-  |> filter(fn: (r) => r._measurement == "gps" and r.device_id == "{device_id}")
+  |> filter(fn: (r) =>
+      r._measurement == "gps" and
+      r.device_id == "{device_id}" and
+      (r._field == "lat" or r._field == "lon")
+  )
   |> pivot(rowKey:["_time"], columnKey:["_field"], valueColumn:"_value")
-  |> keep(columns: ["_time","device_id","lat","lon","alt_m","vel_kmh","sats","hdop"])
   |> sort(columns: ["_time"], desc: true)
   |> limit(n: 1)
 '''
@@ -115,6 +118,7 @@ from(bucket: "{bucket}")
             rows.append(record.values)
 
     return rows
+
 
 
 # ─────────────────────────────────────────────

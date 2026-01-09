@@ -86,7 +86,7 @@ def last_location_view(request, device_id: str):
             status=status.HTTP_502_BAD_GATEWAY,
         )
 
-    if not rows:
+    if not rows or rows[0].get("lat") is None or rows[0].get("lon") is None:
         return Response({"device_id": device_id, "found": False})
 
     r = rows[0]
