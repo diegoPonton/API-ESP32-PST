@@ -9,6 +9,7 @@ from django.conf import settings
 
 from .serializers import TelemetryInSerializer
 from .influx import write_telemetry_and_gps, query_last_location, query_last_telemetry
+from .serializers import TelemetryInSerializer
 
 
 
