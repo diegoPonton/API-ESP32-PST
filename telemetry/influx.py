@@ -115,3 +115,28 @@ from(bucket: "{bucket}")
             rows.append(record.values)
 
     return rows
+
+
+# ─────────────────────────────────────────────
+# Query: última telemetría (sensores)
+# ─────────────────────────────────────────────
+def query_last_telemetry(device_id: str):
+    _, _, query_api = _get_client()
+    bucket = settings.INFLUX_BUCKET
+
+    flux = f'''
+from(bucket: "{bucket}")
+  |> range(start: -7d)
+  |> filter(fn: (r) => r._measurement == "telemetry" and r.device_id == "{device_id}")
+  |> pivot(rowKey:["_time"], columnKey:["_field"], valueColumn:"_value")
+  |> keep(columns: ["_time","device_id","amb_temp_c","amb_hum_pct","probe_temp_c"])
+  |> sort(columns: ["_time"], desc: true)
+  |> limit(n: 1)
+'''
+    tables = query_api.query(org=settings.INFLUX_ORG, query=flux)
+    rows = []
+    for table in tables:
+        for record in table.records:
+            rows.append(record.values)
+
+    return rows

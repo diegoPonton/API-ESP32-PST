@@ -8,7 +8,9 @@ from rest_framework import status
 from django.conf import settings
 
 from .serializers import TelemetryInSerializer
-from .influx import write_telemetry_and_gps, query_last_location
+from .influx import write_telemetry_and_gps, query_last_location, query_last_telemetry
+
+
 
 
 def _require_bearer_token(request) -> Optional[Response]:
@@ -99,5 +101,35 @@ def last_location_view(request, device_id: str):
             "vel_kmh": r.get("vel_kmh"),
             "sats": r.get("sats"),
             "hdop": r.get("hdop"),
+        }
+    )
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])  # lectura pública
+def last_telemetry_view(request, device_id: str):
+    """
+    Última telemetría (sensores) pública para el dispositivo.
+    """
+    try:
+        rows = query_last_telemetry(device_id)
+    except Exception:
+        return Response(
+            {"detail": "Query error"},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    if not rows:
+        return Response({"device_id": device_id, "found": False})
+
+    r = rows[0]
+    return Response(
+        {
+            "device_id": device_id,
+            "found": True,
+            "ts": r.get("_time"),
+            "amb_temp_c": r.get("amb_temp_c"),
+            "amb_hum_pct": r.get("amb_hum_pct"),
+            "probe_temp_c": r.get("probe_temp_c"),
         }
     )
