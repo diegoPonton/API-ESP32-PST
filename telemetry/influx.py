@@ -56,6 +56,14 @@ def write_telemetry_and_gps(payload: dict):
     if probe.get("ok") and probe.get("temp_c") is not None:
         p = p.field("probe_temp_c", float(probe["temp_c"]))
 
+    # ── BATTERY ──────────────────────────────
+    # Espera: "bat": {"v": <float>, "pct": <int>}
+    bat = payload.get("bat") or {}
+    if bat.get("v") is not None:
+        p = p.field("bat_v", float(bat["v"]))
+    if bat.get("pct") is not None:
+        p = p.field("bat_pct", int(bat["pct"]))
+
     # Timestamp: si viene ts_ms lo usamos, si no, now()
     if ts_ms is not None:
         p = p.time(_to_ns(ts_ms), WritePrecision.NS)
@@ -120,9 +128,8 @@ from(bucket: "{bucket}")
     return rows
 
 
-
 # ─────────────────────────────────────────────
-# Query: última telemetría (sensores)
+# Query: última telemetría (sensores + batería)
 # ─────────────────────────────────────────────
 def query_last_telemetry(device_id: str):
     _, _, query_api = _get_client()
@@ -133,7 +140,7 @@ from(bucket: "{bucket}")
   |> range(start: -7d)
   |> filter(fn: (r) => r._measurement == "telemetry" and r.device_id == "{device_id}")
   |> pivot(rowKey:["_time"], columnKey:["_field"], valueColumn:"_value")
-  |> keep(columns: ["_time","device_id","amb_temp_c","amb_hum_pct","probe_temp_c"])
+  |> keep(columns: ["_time","device_id","amb_temp_c","amb_hum_pct","probe_temp_c","bat_v","bat_pct"])
   |> sort(columns: ["_time"], desc: true)
   |> limit(n: 1)
 '''
